@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<name>Drag'n'Drop between JFX and JS</name>
-	<description>Experimentation of Drag'n'Drop between JavaFX and HTML5 using custom Data Types</description>
+	<description>Experimentation of Drag'n'Drop between JavaFX and HTML5</description>
 
 	<groupId>org.pigelvy</groupId>
 	<artifactId>dnd-jfx-Js</artifactId>
