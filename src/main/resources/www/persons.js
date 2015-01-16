@@ -1,3 +1,5 @@
+const MIME_PERSON = "text/CustomPerson";
+
 document.counter = 0;
 
 //function drag(ev) {
@@ -7,31 +9,23 @@ document.counter = 0;
 //}
 
 function onDragEnterFunc(ev) {
-    console.log("(onDragEnter) " + ev);
+    console.log("(onDragEnter) DataTypes:[" + mimeTypesToString(ev) + "]");
 
-    var dataTypes = ev.dataTransfer.types;
+    if (hasPersonMimeType(ev)) {
+        console.info("Allow drop because MIME:[" + MIME_PERSON + "] has been found");
 
-    for	(index = 0; index < dataTypes.length; index++) {
-        var dataType = dataTypes[index];
-
-        console.log(" - data type = " + dataType);
+        ev.preventDefault();
+    } else {
+        console.info("Forbid drop because MIME:[" + MIME_PERSON + "] has not been found");
     }
-
-    //ev.preventDefault();
 }
 
 function onDragOverFunc(ev) {
-    //console.log("(onDragOver) " + ev);
+    console.log("(onDragOver) DataTypes:[" + mimeTypesToString(ev) + "]");
 
-    ev.preventDefault();
-}
-
-function onDragLeaveFunc(ev) {
-    console.log("(onDragLeave) " + ev);
-
-
-
-    //ev.preventDefault();
+    if(hasPersonMimeType(ev)) {
+        ev.preventDefault();
+    }
 }
 
 function onDropFunc(ev) {
@@ -69,3 +63,41 @@ function clickOnList(ev) {
 
     ev.target.parentNode.appendChild(newNode);
 }
+
+function hasPersonMimeType(dragEvent) {
+    return hasMimeType(dragEvent, MIME_PERSON);
+}
+
+function hasMimeType(dragEvent, mimeType) {
+    const indexOfMimType = dragEvent.dataTransfer.types.indexOf(mimeType);
+
+    console.log("index of MIME:[" + mimeType + "] = " + indexOfMimType);
+
+    return indexOfMimType != -1;
+}
+
+function mimeTypesToString(event) {
+    const types = event.dataTransfer.types;
+
+    var text = "";
+
+    for (var i = 0; i < types.length; i++) {
+        if(i > 0) {
+            text += ",";
+        }
+
+       text += types[i];
+    }
+
+    return text;
+}
+
+/* Test the output methods of the console object. */
+function testConsoleApi() {
+    console.debug("debug msg"); //works with firefox 34 & Chrome 39
+    console.log("log msg");
+    console.info("info msg");
+    console.warn("warn msg");
+    console.error("error msg");
+}
+

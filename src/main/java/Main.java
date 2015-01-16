@@ -21,14 +21,19 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.web.WebView;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 
@@ -49,42 +54,27 @@ public class Main extends Application {
     );
 
     private final ListView<Person> personListView = new ListView<>(listViewObservableList);
-    private final TextArea textArea = new TextArea();
-    private final WebView googleWebView = new WebView();
-    private final WebView mainWebView = new WebView();
-    private final WebView peopleWebView = new WebView();
+    private final WebView personWebView = new WebView();
     private final TextField firstName = new TextField();
     private final TextField lastName = new TextField();
+    private final TextArea textArea = new TextArea("This is a JavaFX TextArea");
 
     @Override
     public void start(Stage mainStage) throws Exception {
         mainStage.setTitle("JavaFX & HTML5 - D'n'D test");
 
-        googleWebView.getEngine().load("http://www.google.fr");
-
-        {
-            final URL resource = getClass().getClassLoader().getResource("www/index.html");
-            mainWebView.getEngine().load(resource.toExternalForm());
-        }
         {
             final URL resource = getClass().getClassLoader().getResource("www/persons.html");
-            peopleWebView.getEngine().load(resource.toExternalForm());
+            personWebView.getEngine().load(resource.toExternalForm());
         }
 
+        final SplitPane westernSplitPane = new SplitPane();
+        westernSplitPane.setOrientation(Orientation.VERTICAL);
+        westernSplitPane.getItems().addAll(createJfxPersonList(), textArea);
+
         final SplitPane splitPane = new SplitPane();
-        splitPane.setOrientation(Orientation.VERTICAL);
-
-        final SplitPane upperSplitPane = new SplitPane();
-        upperSplitPane.getItems().add(googleWebView);
-//        upperSplitPane.getItems().add(mainWebView);
-        upperSplitPane.getItems().add(peopleWebView);
-
-        final SplitPane lowerSplitPane = new SplitPane();
-        lowerSplitPane.getItems().add(createJfxPersonList());
-        lowerSplitPane.getItems().add(textArea);
-
-        splitPane.getItems().add(upperSplitPane);
-        splitPane.getItems().add(lowerSplitPane);
+        splitPane.getItems().addAll(westernSplitPane, personWebView);
+        splitPane.setDividerPositions(0.2);
 
         final Scene scene = new Scene(splitPane);
         final URL jfxCssUrl = getClass().getResource("jfx.css");
@@ -119,32 +109,45 @@ public class Main extends Application {
 
                 content.putString("Mr " + lastName + " " + firstName);
 
-                final Group group = new Group();
                 final Rectangle rectangle = new Rectangle();
                 rectangle.setId("dndRec");
-                group.getChildren().add(rectangle);
+                rectangle.setWidth(200);
+                rectangle.setHeight(200);
+                rectangle.setFill(Color.DARKORANGE);
+                // todo : how to style through CSS (inlined or better, in file) ???
+//                rectangle.setStyle("-fx-fill: darkorange;");
                 final Text text = new Text(firstName + " " + lastName);
                 text.setId("dndText");
+                text.setFill(Color.WHITE);
+
+                final StackPane group = new StackPane();
+                group.setAlignment(Pos.CENTER);
+                group.getChildren().add(rectangle);
                 group.getChildren().add(text);
 
-                final SnapshotParameters params = new SnapshotParameters();
-                final Image snapshot = rectangle.snapshot(params, null);
-//                content.putImage(snapshot);
+                final Image drawViewImage = group.snapshot(new SnapshotParameters(), null);
+                content.putImage(drawViewImage);
 
-                final String json = format(
+                final String personStringified = format(
                     "Person{firstName:%s,lastName:%s}",
                     firstName,
                     lastName
                 );
-                content.put(MIME_PERSON, json);
+                content.put(MIME_PERSON, personStringified);
 
-                final File file = new File(format("D:/%s_%s.txt", firstName, lastName));
-                if (file.exists()) {
-                    content.putFiles(Arrays.asList(file));
+                try {
+                    final File personFile = File.createTempFile(firstName + "_" + lastName, ".txt");
+                    personFile.deleteOnExit();
+                    final FileOutputStream fileOutputStream = new FileOutputStream(personFile);
+                    fileOutputStream.write(personStringified.getBytes());
+                    fileOutputStream.close();
+                    content.putFiles(Arrays.asList(personFile));
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
 
                 final Dragboard dragboard = listView.startDragAndDrop(TransferMode.COPY);
-                dragboard.setDragView(snapshot);
+                dragboard.setDragView(drawViewImage);
 
                 dragboard.setContent(content);
                 event.consume();
