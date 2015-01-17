@@ -40,7 +40,7 @@ import java.util.Arrays;
 import static java.lang.String.format;
 
 public class Main extends Application {
-    private static final DataFormat MIME_PERSON = new DataFormat("text/CustomPerson");
+    private static final DataFormat MIME_PERSON = new DataFormat("application/x-pigelvy-person");
 
     public static void main(String[] args) {
         Application.launch(args);

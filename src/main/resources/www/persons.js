@@ -1,4 +1,4 @@
-const MIME_PERSON = "text/CustomPerson";
+const MIME_PERSON = "application/x-pigelvy-person";
 
 document.counter = 0;
 
@@ -69,7 +69,9 @@ function hasPersonMimeType(dragEvent) {
 }
 
 function hasMimeType(dragEvent, mimeType) {
-    const indexOfMimType = dragEvent.dataTransfer.types.indexOf(mimeType);
+    const dataTypes = dragEvent.dataTransfer.types;
+
+    const indexOfMimType = $.inArray(mimeType, dataTypes);
 
     console.log("index of MIME:[" + mimeType + "] = " + indexOfMimType);
 
