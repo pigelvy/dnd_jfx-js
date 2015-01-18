@@ -15,17 +15,13 @@ import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DataFormat;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.TransferMode;
+import javafx.scene.input.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.web.WebView;
 import javafx.stage.Screen;
@@ -47,14 +43,15 @@ public class Main extends Application {
     }
 
     private final ObservableList<Person> listViewObservableList = FXCollections.observableArrayList(
-        new Person("jerry", "seinfled"),
-        new Person("george", "costanza"),
-        new Person("elaine", "benes"),
-        new Person("kramer", "cosmo")
+            new Person("jerry", "seinfled"),
+            new Person("george", "costanza"),
+            new Person("elaine", "benes"),
+            new Person("kramer", "cosmo")
     );
 
     private final ListView<Person> personListView = new ListView<>(listViewObservableList);
-    private final WebView personWebView = new WebView();
+    private final WebView personWebView1 = new WebView();
+    private final WebView personWebView2 = new WebView();
     private final TextField firstName = new TextField();
     private final TextField lastName = new TextField();
     private final TextArea textArea = new TextArea("This is a JavaFX TextArea");
@@ -65,7 +62,11 @@ public class Main extends Application {
 
         {
             final URL resource = getClass().getClassLoader().getResource("www/persons.html");
-            personWebView.getEngine().load(resource.toExternalForm());
+            personWebView1.getEngine().load(resource.toExternalForm());
+        }
+        {
+            final URL resource = getClass().getClassLoader().getResource("www/persons.html");
+            personWebView2.getEngine().load(resource.toExternalForm());
         }
 
         final SplitPane westernSplitPane = new SplitPane();
@@ -73,7 +74,7 @@ public class Main extends Application {
         westernSplitPane.getItems().addAll(createJfxPersonList(), textArea);
 
         final SplitPane splitPane = new SplitPane();
-        splitPane.getItems().addAll(westernSplitPane, personWebView);
+        splitPane.getItems().addAll(westernSplitPane, personWebView1, personWebView2);
         splitPane.setDividerPositions(0.2);
 
         final Scene scene = new Scene(splitPane);
@@ -90,69 +91,7 @@ public class Main extends Application {
     private Node createJfxPersonList() {
         personListView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
         personListView.setCellFactory(param -> new PersonCell());
-        personListView.setOnDragDetected(
-            event -> {
-                System.out.println("Drag Detected on Jfx ListView : " + event);
-
-                final ListView<Person> listView = (ListView<Person>) event.getSource();
-
-                final Person selectedPerson = listView.getSelectionModel().getSelectedItem();
-
-                if (selectedPerson == null) {
-                    return;
-                }
-
-                final String firstName = selectedPerson.firstName.getValueSafe();
-                final String lastName = selectedPerson.lastName.getValueSafe();
-
-                final ClipboardContent content = new ClipboardContent();
-
-                content.putString("Mr " + lastName + " " + firstName);
-
-                final Rectangle rectangle = new Rectangle();
-                rectangle.setId("dndRec");
-                rectangle.setWidth(200);
-                rectangle.setHeight(200);
-                rectangle.setFill(Color.DARKORANGE);
-                // todo : how to style through CSS (inlined or better, in file) ???
-//                rectangle.setStyle("-fx-fill: darkorange;");
-                final Text text = new Text(firstName + " " + lastName);
-                text.setId("dndText");
-                text.setFill(Color.WHITE);
-
-                final StackPane group = new StackPane();
-                group.setAlignment(Pos.CENTER);
-                group.getChildren().add(rectangle);
-                group.getChildren().add(text);
-
-                final Image drawViewImage = group.snapshot(new SnapshotParameters(), null);
-                content.putImage(drawViewImage);
-
-                final String personStringified = format(
-                    "Person{firstName:%s,lastName:%s}",
-                    firstName,
-                    lastName
-                );
-                content.put(MIME_PERSON, personStringified);
-
-                try {
-                    final File personFile = File.createTempFile(firstName + "_" + lastName, ".txt");
-                    personFile.deleteOnExit();
-                    final FileOutputStream fileOutputStream = new FileOutputStream(personFile);
-                    fileOutputStream.write(personStringified.getBytes());
-                    fileOutputStream.close();
-                    content.putFiles(Arrays.asList(personFile));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                final Dragboard dragboard = listView.startDragAndDrop(TransferMode.COPY);
-                dragboard.setDragView(drawViewImage);
-
-                dragboard.setContent(content);
-                event.consume();
-            }
-        );
+        personListView.setOnDragDetected(this::onDragDetected);
 
         final VBox result = new VBox(10);
         result.getChildren().add(new Label("New person :"));
@@ -161,6 +100,69 @@ public class Main extends Application {
         VBox.setVgrow(personListView, Priority.ALWAYS);
 
         return result;
+    }
+
+    private void onDragDetected(MouseEvent event) {
+        System.out.println("Drag Detected on Jfx ListView : " + event);
+
+        final ListView<Person> listView = (ListView<Person>) event.getSource();
+
+        final Person selectedPerson = listView.getSelectionModel().getSelectedItem();
+
+        if (selectedPerson == null) {
+            return;
+        }
+
+        final String firstName = selectedPerson.firstName.getValueSafe();
+        final String lastName = selectedPerson.lastName.getValueSafe();
+
+        final ClipboardContent content = new ClipboardContent();
+
+        content.putString("Mr " + lastName + " " + firstName);
+
+        final Rectangle rectangle = new Rectangle();
+        rectangle.setId("dndRec");
+        rectangle.setWidth(200);
+        rectangle.setHeight(200);
+        rectangle.setFill(Color.DARKORANGE);
+        // todo : how to style through CSS (inlined or better, in file) ???
+//                rectangle.setStyle("-fx-fill: darkorange;");
+        final Text text = new Text(firstName + " " + lastName);
+        text.setId("dndText");
+        text.setFill(Color.WHITE);
+
+        final StackPane group = new StackPane();
+        group.setAlignment(Pos.CENTER);
+        group.getChildren().add(rectangle);
+        group.getChildren().add(text);
+
+        final Image drawViewImage = group.snapshot(new SnapshotParameters(), null);
+        content.putImage(drawViewImage);
+
+        final String personAsJson = format(
+                "{\"firstname\":\"%s\",\"lastname\":\"%s\"}",
+                firstName,
+                lastName
+        );
+        content.put(MIME_PERSON, personAsJson);
+        content.putString(personAsJson);
+
+        try {
+            final File personFile = File.createTempFile(firstName + "_" + lastName, ".txt");
+            personFile.deleteOnExit();
+            final FileOutputStream fileOutputStream = new FileOutputStream(personFile);
+            fileOutputStream.write(personAsJson.getBytes());
+            fileOutputStream.close();
+            content.putFiles(Arrays.asList(personFile));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        final Dragboard dragboard = listView.startDragAndDrop(TransferMode.COPY);
+        dragboard.setDragView(drawViewImage);
+
+        dragboard.setContent(content);
+        event.consume();
     }
 
     private Node createPersonCreatorNode() {

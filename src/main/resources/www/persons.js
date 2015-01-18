@@ -15,6 +15,8 @@ function onDragEnterFunc(ev) {
         console.info("Allow drop because MIME:[" + MIME_PERSON + "] has been found");
 
         ev.preventDefault();
+    } else  if(hasMimeType(ev, "text/plain")) {
+        ev.preventDefault();
     } else {
         console.info("Forbid drop because MIME:[" + MIME_PERSON + "] has not been found");
     }
@@ -25,43 +27,89 @@ function onDragOverFunc(ev) {
 
     if(hasPersonMimeType(ev)) {
         ev.preventDefault();
+    } else  if(hasMimeType(ev, "text/plain")) {
+        ev.preventDefault();
     }
 }
 
 function onDropFunc(ev) {
-    console.log("(onDrop) " + ev.toString());
-
     ev.preventDefault();
 
-    var someText = "provided types : [";
+    console.log("(onDrop) MIME types:[" + mimeTypesToString(ev) + "]");
 
-    for (var i = 0, size = ev.dataTransfer.types.length; i < size; i++) {
-        var dataType = ev.dataTransfer.types[i];
+    if (hasPersonMimeType(ev)) {
+        console.info("MIME:[" + MIME_PERSON + "] has been found");
 
-        if(i != 0) someText += ",";
+        const personJson1 = ev.dataTransfer.getData(MIME_PERSON);
+        const person1 = JSON.parse(personJson1);
 
-        someText += dataType;
+        createPerson(person1.firstname, person1.lastname);
+    } else if(hasMimeType(ev, "text/plain")){
+        const personJson2 = ev.dataTransfer.getData("text/plain");
+        const person2 = JSON.parse(personJson2);
 
+        createPerson(person2.firstname, person2.lastname);
+        console.info("Forbid drop because MIME:[" + MIME_PERSON + "] has not been found");
     }
-
-    someText += "]";
-
-    console.log("(onDrop) " + someText);
-
-    //var data = ev.dataTransfer.getData("text");
-
-    //ev.target.appendChild(document.getElementById(data));
 }
 
 
+function onDragPerson(event) {
+    const firstname = event.target.getAttribute("firstname");
+    const lastname = event.target.getAttribute("lastname");
 
-function clickOnList(ev) {
+    console.debug("Drag started on [" + firstname + " " + lastname + "]");
+
+    const person = new Person(firstname, lastname);
+    var personJSON = JSON.stringify(person);
+
+    console.debug("Person JSON = " + personJSON);
+
+    event.dataTransfer.effectAllowed = 'copy';
+
+    event.dataTransfer.setData(MIME_PERSON, personJSON);
+    event.dataTransfer.setData('text/plain', firstname + " " + lastname);
+}
+
+/**
+ * Define Person class
+ */
+function Person(firstname, lastname) {
+    this.firstname = firstname;
+    this.lastname = lastname;
+}
+
+function createPerson(firstname, lastname) {
+    console.log("append Person:[" + firstname + " " + lastname + "] to list");
+
     var newNode = document.createElement('li');
+    newNode.setAttribute("firstname", firstname);
+    newNode.setAttribute("lastname", lastname);
+    newNode.setAttribute("draggable", "true");
+    //newNode.draggable = true;
+    newNode.textContent = firstname + " " + lastname;
+    newNode.ondragstart = onDragPerson;
 
-    newNode.textContent = "Item " + ++document.counter;
-    console.log("append <LI> to list : " + newNode.textContent);
+    document.getElementById("personList").appendChild(newNode);
+}
+function onCreatePerson(ev) {
+    const firstnameInput = document.getElementById("person_firstname");
+    const lastnameInput = document.getElementById("person_lastname");
 
-    ev.target.parentNode.appendChild(newNode);
+    const firstname = firstnameInput.value;
+    const lastname = lastnameInput.value;
+
+    if (firstname === "" || lastname === "") {
+        // no input so stop event processing
+        console.warn("no input on firstname or lastname")
+        return;
+    }
+
+    // Reset input fields
+    firstnameInput.value = "";
+    lastnameInput.value = "";
+
+    createPerson(firstname, lastname);
 }
 
 function hasPersonMimeType(dragEvent) {

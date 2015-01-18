@@ -12,10 +12,18 @@
         <link rel="stylesheet" type="text/css" href="webStyle.css" media="screen" />
     </head>
     <body>
-        <div class="app.textArea" style="background-color: aqua">
+        <div>
+            <form>
+                <div>
+                    First name&nbsp;:<input type="text" id="person_firstname">&nbsp;
+                    Last name&nbsp;:<input type="text" id="person_lastname">&nbsp;
+                    <input type="button" onclick="onCreatePerson(event)" value="Create Person"></div>
+            </form>
+        </div>
         <div>List Of Persons :</div>
-            <ul id="listOfPeople" ondragenter="onDragEnterFunc(event)" ondragover="onDragOverFunc(event)" ondrop="onDropFunc(event)">
-                <li onclick="clickOnList(event)" >Click me</li>
+            <ul id="personList" ondragenter="onDragEnterFunc(event)" ondragover="onDragOverFunc(event)" ondrop="onDropFunc(event)">
+                <li ondragstart="onDragPerson(event)" firstname="darth" lastname="vador" draggable="true">Darth Vador</li>
+                <li ondragstart="onDragPerson(event)" firstname="darth" lastname="maul" draggable="true">Darth Maul</li>
             </ul>
         </div>
 
